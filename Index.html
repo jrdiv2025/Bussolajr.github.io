@@ -2,189 +2,425 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bússola</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Detector de Metais Web</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg: #05070b;
+            --panel: #0e121d;
+            --border: #213354;
+            --accent: #00d185;
+            --warn: #ffb300;
+            --danger: #ff3347;
+            --text: #b8cce8;
+            --dim: #4d6185;
         }
 
         body {
-            font-family: Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            color: white;
+            overflow: hidden;
+            touch-action: none; /* Impede zoom/scroll */
         }
 
-        .compass-container {
-            position: relative;
-            width: 300px;
-            height: 300px;
-        }
-
-        /* A roda da bússola feita com CSS */
-        #compass {
+        /* Cabeçalho */
+        header {
             width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 8px solid #fff;
-            background: #222;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            background: rgba(14, 18, 29, 0.9);
+        }
+        h1 { margin: 0; font-size: 1.2rem; color: var(--accent); letter-spacing: 1px; }
+        .status-bar { font-size: 0.8rem; color: var(--dim); margin-top: 5px; }
+
+        /* Área Principal */
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             position: relative;
-            transition: transform 0.2s ease-out;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            width: 100%;
         }
 
-        /* Marcadores de direção */
-        .mark {
-            position: absolute;
-            width: 2px;
-            height: 10px;
-            background: #fff;
-            left: 50%;
-            top: 0;
-            transform-origin: 50% 150px;
-        }
-
-        .mark.main {
-            width: 4px;
-            height: 15px;
-            background: #ff4444;
-        }
-
-        /* Agulha */
-        .needle {
-            position: absolute;
-            width: 6px;
-            height: 130px;
-            background: #ff4444;
-            left: 50%;
-            top: 50%;
-            transform-origin: bottom center;
-            transform: translate(-50%, -100%);
-            border-radius: 3px;
-            z-index: 2;
-        }
-        .needle::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: -8px;
-            width: 22px;
-            height: 22px;
-            background: #fff;
+        /* Radar / Bússola */
+        #radar-container {
+            position: relative;
+            width: 320px;
+            height: 320px;
             border-radius: 50%;
-            border: 4px solid #333;
+            background: radial-gradient(circle, #1a2236 0%, #05070b 70%);
+            border: 2px solid var(--border);
+            box-shadow: 0 0 30px rgba(0, 209, 133, 0.05);
+            transition: border-color 0.3s;
         }
-        .needle::before {
+
+        /* Anéis concêntricos */
+        .ring {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 1px solid rgba(33, 51, 84, 0.5);
+        }
+        .r1 { width: 25%; height: 25%; }
+        .r2 { width: 50%; height: 50%; }
+        .r3 { width: 75%; height: 75%; }
+
+        /* Cursor */
+        #cursor {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 12px; height: 12px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px var(--accent);
+            transition: background-color 0.2s;
+            z-index: 10;
+        }
+        
+        /* Mira do cursor */
+        #cursor::after {
             content: '';
             position: absolute;
-            top: 0;
-            left: -8px;
-            width: 0;
-            height: 0;
-            border-left: 11px solid transparent;
-            border-right: 11px solid transparent;
-            border-bottom: 20px solid #ff4444;
-        }
-
-        /* Centro dos graus */
-        #degree {
-            position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
+            width: 40px; height: 40px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
             transform: translate(-50%, -50%);
-            font-size: 24px;
-            font-weight: bold;
-            color: #fff;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px 20px;
-            border-radius: 30px;
-            z-index: 3;
         }
 
-        #direction {
-            margin-top: 30px;
-            font-size: 32px;
-            font-weight: bold;
+        /* Botões do Anel */
+        .ring-btn {
+            position: absolute;
+            width: 50px; height: 50px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 5;
+            user-select: none;
+        }
+        .ring-btn.active {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 15px var(--accent);
+            transform: scale(1.1);
+        }
+        .ring-btn:hover { border-color: var(--accent); }
+
+        /* Controles Inferiores */
+        .controls {
+            width: 100%;
+            padding: 20px;
+            background: var(--panel);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-sizing: border-box;
         }
 
-        #status {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
+        .info-display {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
         }
+
+        button.action-btn {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        button.action-btn:active { opacity: 0.8; }
+        
+        .settings {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--dim);
+        }
+
+        /* Overlay de Permissão */
+        #permission-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        #permission-overlay p { max-width: 300px; margin-bottom: 20px; line-height: 1.5; }
+
     </style>
 </head>
 <body>
 
-    <div class="compass-container">
-        <div id="compass">
-            <div class="needle"></div>
-            <!-- Marcadores -->
-            <div class="mark main" style="transform: rotate(0deg)"></div>
-            <div class="mark" style="transform: rotate(45deg)"></div>
-            <div class="mark" style="transform: rotate(90deg)"></div>
-            <div class="mark" style="transform: rotate(135deg)"></div>
-            <div class="mark main" style="transform: rotate(180deg)"></div>
-            <div class="mark" style="transform: rotate(225deg)"></div>
-            <div class="mark" style="transform: rotate(270deg)"></div>
-            <div class="mark" style="transform: rotate(315deg)"></div>
+    <header>
+        <h1>◈ DETECTOR WEB</h1>
+        <div class="status-bar" id="sensor-status">Aguardando sensores...</div>
+    </header>
+
+    <main>
+        <div id="radar-container">
+            <div class="ring r1"></div>
+            <div class="ring r2"></div>
+            <div class="ring r3"></div>
+            <div id="cursor"></div>
+            <!-- Botões serão gerados via JS -->
         </div>
-        <div id="degree">0°</div>
+    </main>
+
+    <div class="controls">
+        <div class="info-display" id="intensity-val">0 µT</div>
+        <div class="settings">
+            <span>Sensibilidade: <input type="range" id="sens-slider" min="1" max="10" value="3"></span>
+            <span id="mode-text">Modo: Normal</span>
+        </div>
+        <button class="action-btn" id="btn-calibrate">Recalibrar Base</button>
     </div>
 
-    <div id="direction">N</div>
-    <div id="status">Inicializando...</div>
+    <!-- Overlay Inicial -->
+    <div id="permission-overlay">
+        <h2 style="color: var(--accent)">Atenção</h2>
+        <p>Para detectar metais, este app precisa acessar o <strong>Magnetômetro</strong> do seu celular.</p>
+        <p>O Chrome solicitará permissão na próxima tela.</p>
+        <button class="action-btn" onclick="startSensors()">ATIVAR SENSOR</button>
+    </div>
 
     <script>
-        const compass = document.getElementById('compass');
-        const degreeDisplay = document.getElementById('degree');
-        const directionDisplay = document.getElementById('direction');
-        const statusDisplay = document.getElementById('status');
+        // --- Configurações ---
+        const buttonsConfig = [
+            { icon: "⚙", label: "Config" },
+            { icon: "📡", label: "Teste" },
+            { icon: "💾", label: "Salvar" },
+            { icon: "📊", label: "Dados" },
+            { icon: "🔍", label: "Buscar" },
+            { icon: "⚡", label: "Energia" },
+            { icon: "🔄", label: "Reset" },
+            { icon: "ℹ", label: "Sobre" }
+        ];
 
-        const directions = ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'];
+        let magnetometer;
+        let accelerometer;
+        let isRunning = false;
+        
+        // Calibração
+        let baseX = 0, baseY = 0, baseZ = 0;
+        let isCalibrated = false;
+        
+        // Estado
+        let currentIntensity = 0;
+        let sensitivity = 3.0;
+        let activeBtnIndex = -1;
 
-        if (window.DeviceOrientationEvent) {
-            statusDisplay.innerText = "Solicitando permissão...";
+        // Elementos DOM
+        const cursor = document.getElementById('cursor');
+        const radar = document.getElementById('radar-container');
+        const intensityDisplay = document.getElementById('intensity-val');
+        const statusText = document.getElementById('sensor-status');
+        const overlay = document.getElementById('permission-overlay');
+        const btnCalibrate = document.getElementById('btn-calibrate');
+        const sensSlider = document.getElementById('sens-slider');
 
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission()
-                    .then(permissionState => {
-                        if (permissionState === 'granted') {
-                            window.addEventListener('deviceorientation', handleOrientation);
-                            statusDisplay.innerText = "Bússola ativa";
-                        } else {
-                            statusDisplay.innerText = "Permissão negada";
-                        }
-                    })
-                    .catch(console.error);
-            } else {
-                window.addEventListener('deviceorientation', handleOrientation);
-                statusDisplay.innerText = "Bússola ativa";
-            }
-        } else {
-            statusDisplay.innerText = "Seu dispositivo não suporta sensor de orientação";
-        }
+        // --- Inicialização dos Botões em Anel ---
+        function initButtons() {
+            const radius = 140; // Raio do anel
+            const centerX = 160; // Metade do container (320px)
+            const centerY = 160;
 
-        function handleOrientation(event) {
-            let alpha = event.alpha;
-
-            if (alpha !== null) {
-                compass.style.transform = `rotate(${-alpha}deg)`;
-                degreeDisplay.innerText = Math.round(alpha) + '°';
+            buttonsConfig.forEach((btn, index) => {
+                const el = document.createElement('div');
+                el.className = 'ring-btn';
+                el.innerHTML = btn.icon;
+                el.title = btn.label;
                 
-                const index = Math.round(((alpha % 360) / 45)) % 8;
-                directionDisplay.innerText = directions[index];
+                // Posicionamento trigonométrico
+                const angle = (index * (360 / buttonsConfig.length)) - 90; // Começa do topo
+                const rad = angle * (Math.PI / 180);
+                const x = centerX + radius * Math.cos(rad) - 25; // -25 é metade do tamanho do botão
+                const y = centerY + radius * Math.sin(rad) - 25;
+
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+                
+                el.onclick = () => {
+                    alert(`Função: ${btn.label}`);
+                    speak(btn.label);
+                };
+
+                radar.appendChild(el);
+            });
+        }
+
+        // --- Lógica de Sensores ---
+        async function startSensors() {
+            if (!('Magnetometer' in window)) {
+                alert("Seu navegador não suporta a API de Magnetômetro. Tente o Chrome Android atualizado.");
+                return;
+            }
+
+            try {
+                // Inicia Magnetômetro
+                magnetometer = new Magnetometer({ frequency: 60 });
+                
+                magnetometer.addEventListener('reading', () => {
+                    if (!isCalibrated) {
+                        // Primeira leitura define a base
+                        baseX = magnetometer.x;
+                        baseY = magnetometer.y;
+                        baseZ = magnetometer.z;
+                        isCalibrated = true;
+                        statusText.innerText = "● Monitorando";
+                        statusText.style.color = "var(--accent)";
+                        overlay.style.display = 'none';
+                    }
+                    processReadings();
+                });
+
+                magnetometer.addEventListener('error', (event) => {
+                    console.error(event.error);
+                    statusText.innerText = "Erro: " + event.error.message;
+                });
+
+                magnetometer.start();
+                statusText.innerText = "Calibrando...";
+
+            } catch (err) {
+                statusText.innerText = "Permissão negada ou erro ao iniciar.";
+                console.error(err);
             }
         }
-    </script>
 
+        function processReadings() {
+            // Calcula vetor diferença
+            const dx = magnetometer.x - baseX;
+            const dy = magnetometer.y - baseY;
+            const dz = magnetometer.z - baseZ;
+
+            // Intensidade total (magnitude)
+            const rawIntensity = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            
+            // Aplica sensibilidade e limite (deadzone)
+            let adjustedIntensity = (rawIntensity * sensitivity) - 5; 
+            if (adjustedIntensity < 0) adjustedIntensity = 0;
+            if (adjustedIntensity > 100) adjustedIntensity = 100;
+
+            currentIntensity = adjustedIntensity;
+
+            // Atualiza UI
+            updateCursor(dx, dy, adjustedIntensity);
+            checkButtonHover(dx, dy);
+        }
+
+        function updateCursor(dx, dy, intensity) {
+            // Mapeia direção para pixels (limitado ao raio do radar)
+            const maxOffset = 130;
+            
+            // Inverte sinais se necessário para alinhar com a tela
+            let moveX = dx * 2 * sensitivity; 
+            let moveY = dy * 2 * sensitivity;
+
+            // Limita o círculo
+            const dist = Math.sqrt(moveX*moveX + moveY*moveY);
+            if (dist > maxOffset) {
+                const ratio = maxOffset / dist;
+                moveX *= ratio;
+                moveY *= ratio;
+            }
+
+            cursor.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
+            
+            // Cor do cursor baseada na intensidade
+            let color = 'var(--accent)';
+            if (intensity > 30) color = 'var(--warn)';
+            if (intensity > 60) color = 'var(--danger)';
+            
+            cursor.style.backgroundColor = color;
+            cursor.style.boxShadow = `0 0 ${10 + intensity/2}px ${color}`;
+            radar.style.borderColor = intensity > 50 ? 'var(--danger)' : 'var(--border)';
+
+            intensityDisplay.innerText = `${Math.round(intensity)}%`;
+            intensityDisplay.style.color = color;
+        }
+
+        function checkButtonHover(dx, dy) {
+            // Lógica simples para destacar o botão mais próximo da direção do campo magnético
+            const angleRad = Math.atan2(dy, dx);
+            let angleDeg = angleRad * (180 / Math.PI);
+            if (angleDeg < 0) angleDeg += 360;
+            
+            // Ajuste porque o topo é -90 no CSS mas 0/360 no math padrão pode variar
+            // Vamos simplificar: cada botão ocupa 45 graus (360 / 8)
+            const segment = 360 / buttonsConfig.length;
+            
+            // Encontra índice aproximado
+            // Nota: Esta é uma aproximação visual baseada no vetor magnético
+            let index = Math.round((angleDeg + 90) / segment) % buttonsConfig.length;
+            if (index < 0) index += buttonsConfig.length;
+
+            const btns = document.querySelectorAll('.ring-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            
+            if (currentIntensity > 15 && btns[index]) {
+                btns[index].classList.add('active');
+            }
+        }
+
+        // --- Utilitários ---
+        btnCalibrate.onclick = () => {
+            if (magnetometer) {
+                baseX = magnetometer.x;
+                baseY = magnetometer.y;
+                baseZ = magnetometer.z;
+                speak("Base recalibrada");
+                // Feedback visual
+                radar.style.borderColor = '#fff';
+                setTimeout(() => radar.style.borderColor = '', 200);
+            }
+        };
+
+        sensSlider.oninput = (e) => {
+            sensitivity = parseFloat(e.target.value);
+        };
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Inicia
+        initButtons();
+
+    </script>
 </body>
 </html>
